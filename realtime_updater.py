@@ -1,6 +1,7 @@
+import sys
 import time
-from datetime import datetime
 import requests
+from datetime import datetime
 
 from pubnub.pubnub import PubNub
 from pubnub.pnconfiguration import PNConfiguration
