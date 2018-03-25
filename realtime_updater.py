@@ -17,7 +17,7 @@ def publish_callback(result, status):
 #     print("Successfully sent")
     pass
 
-period_in_seconds = 1  # cant be less than 3 (free trial)
+period_in_seconds = 10  # cant be less than 3 (free trial)
 
 if len(sys.argv) < 3:
 	print("Not enough arguments")
