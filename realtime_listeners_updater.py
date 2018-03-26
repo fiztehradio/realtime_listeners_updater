@@ -1,48 +1,44 @@
 import sys
-import time
+import pymysql
 import requests
-from datetime import datetime
+from time import time, sleep
 
-from pubnub.pubnub import PubNub
-from pubnub.pnconfiguration import PNConfiguration
+time_sleep_in_seconds = 60
 
-def get_listeners_number():
-    resp = requests.get("http://radio.mipt.ru:8410/status-json.xsl")
+
+def get_website_listeners():
     try:
-        return resp.json()["icestats"]["source"]["listeners"]
+        data = requests.get("http://radio.mipt.ru:8410/status-json.xsl").json()
+        return data["icestats"]["source"]["listeners"]
     except:
-
         return 0
 
-def publish_callback(result, status):
-#     print("Successfully sent")
-    pass
 
-period_in_seconds = 3  # cant be less than 3 (free trial)
+def connect_db():
+    connection = pymysql.connect(host='radio.mipt.ru',
+                                 user=sys.argv[1],
+                                 password=sys.argv[2],
+                                 db='radio',
+                                 charset='utf8mb4',
+                                 cursorclass=pymysql.cursors.DictCursor)
+    return connection
+
 
 if len(sys.argv) < 3:
-	print("Not enough arguments")
-	exit()
+    print("please give user and password")
+    exit()
 
-# pubnub keys
-publish_key = sys.argv[1]
-subscribe_key = sys.argv[2]
+connection = connect_db()
 
-channel_name = 'radiostream_listeners'
-
-
-pnconfig = PNConfiguration()
-
-pnconfig.subscribe_key = subscribe_key
-pnconfig.publish_key = publish_key
-pubnub = PubNub(pnconfig)
-
-print("Start to publish number of listeners")
 while True:
-    listeners_number = get_listeners_number()
-    timestamp = int(datetime.now().timestamp() * 1000)
+    try:
+        with connection.cursor() as cursor:
+            data_to_send = (get_website_listeners())
+            sql = "INSERT INTO website_listeners (listeners) VALUES (%s);"
+            cursor.execute(sql, data_to_send)
+        connection.commit()
 
-    data_to_send = dict(time=timestamp, y=listeners_number)
-    pubnub.publish().channel(channel_name).message(data_to_send).async(publish_callback)
-
-    time.sleep(period_in_seconds)
+        sleep(time_sleep_in_seconds)
+    except:
+        connection.close()
+        connection = connect_db()

@@ -1,2 +1,2 @@
-pubnub==4.0.13
+PyMySQL==0.8.0
 requests==2.18.4
